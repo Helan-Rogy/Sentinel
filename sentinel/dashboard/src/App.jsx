@@ -40,10 +40,7 @@ function Console({ onLogout }) {
   const s = useSentinel(onLogout);
   const [view, setView] = useState(() => location.hash.slice(1) || "overview");
   const [selected, setSelected] = useState(null);
-  const [theme, setTheme] = useState("");
-
   useEffect(() => { location.hash = view; }, [view]);
-  useEffect(() => { if (theme) document.documentElement.dataset.theme = theme; }, [theme]);
 
   const openIncident = useCallback((id) => { setSelected(id); setView("incidents"); }, []);
   const pending = pendingActions(s.incidents).length;
@@ -71,7 +68,6 @@ function Console({ onLogout }) {
         ))}
         <div className="rail-foot">
           {conn}
-          <button className="btn quiet" onClick={() => setTheme((document.documentElement.dataset.theme === "dark") ? "light" : "dark")}>Switch theme</button>
           <button className="btn quiet" onClick={onLogout}>Sign out</button>
         </div>
       </nav>
