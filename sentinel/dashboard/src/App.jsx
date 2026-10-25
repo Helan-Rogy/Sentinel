@@ -12,7 +12,6 @@ const TABS = [
 
 function Login({ onDone }) {
   const [t, setT] = useState("");
-  const [showToken, setShowToken] = useState(false);
   const [err, setErr] = useState("");
   const submit = async (e) => {
     e.preventDefault();
@@ -25,10 +24,7 @@ function Login({ onDone }) {
         <div className="brand" style={{ padding: 0 }}><Icon name="overview" /> Sentinel Console</div>
         <h1 style={{ fontSize: 28 }}>Sign in to the console</h1>
         <label htmlFor="tok">Access token</label>
-        <div className="token-field">
-          <input id="tok" className="input" type={showToken ? "text" : "password"} autoFocus value={t} onChange={(e) => setT(e.target.value)} placeholder="The value of SENTINEL_TOKEN" autoComplete="off" />
-          <button type="button" className="token-toggle" onClick={() => setShowToken((visible) => !visible)} aria-label={showToken ? "Hide token" : "Show token"} aria-pressed={showToken}>{showToken ? "Hide" : "Show"}</button>
-        </div>
+        <input id="tok" className="input" type="password" autoFocus value={t} onChange={(e) => setT(e.target.value)} placeholder="The value of SENTINEL_TOKEN" />
         {err && <div className="banner" role="alert">{err}</div>}
         <button className="btn primary" disabled={!t.trim()}>Sign in</button>
       </form>
@@ -85,6 +81,7 @@ function Console({ onLogout }) {
 }
 
 export default function App() {
-  const logout = useCallback(() => { setToken(""); location.reload(); }, []);
-  return <Console onLogout={logout} />;
+  const [authed, setAuthed] = useState(!!getToken());
+  const logout = useCallback(() => { setToken(""); setAuthed(false); }, []);
+  return authed ? <Console onLogout={logout} /> : <Login onDone={() => setAuthed(true)} />;
 }
