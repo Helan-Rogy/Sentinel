@@ -85,7 +85,6 @@ function Console({ onLogout }) {
 }
 
 export default function App() {
-  const [authed, setAuthed] = useState(!!getToken());
-  const logout = useCallback(() => { setToken(""); setAuthed(false); }, []);
-  return authed ? <Console onLogout={logout} /> : <Login onDone={() => setAuthed(true)} />;
+  const logout = useCallback(() => { setToken(""); location.reload(); }, []);
+  return <Console onLogout={logout} />;
 }
