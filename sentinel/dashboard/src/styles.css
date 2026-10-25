@@ -135,6 +135,10 @@ td.path { word-break: break-all; }
 /* login */
 .login { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
 .login form { width: min(420px, 100%); display: grid; gap: 14px; }
+.token-field { position: relative; display: flex; align-items: center; }
+.token-field .input { width: 100%; padding-right: 70px; }
+.token-toggle { position: absolute; right: 8px; border: 0; background: none; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; padding: 6px 8px; border-radius: 6px; }
+.token-toggle:hover { color: var(--ink); background: var(--paper); }
 
 /* phones: rail becomes a bottom tab bar */
 @media (max-width: 860px) {
