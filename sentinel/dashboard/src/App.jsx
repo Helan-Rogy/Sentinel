@@ -12,6 +12,7 @@ const TABS = [
 
 function Login({ onDone }) {
   const [t, setT] = useState("");
+  const [showToken, setShowToken] = useState(false);
   const [err, setErr] = useState("");
   const submit = async (e) => {
     e.preventDefault();
@@ -24,7 +25,10 @@ function Login({ onDone }) {
         <div className="brand" style={{ padding: 0 }}><Icon name="overview" /> Sentinel Console</div>
         <h1 style={{ fontSize: 28 }}>Sign in to the console</h1>
         <label htmlFor="tok">Access token</label>
-        <input id="tok" className="input" type="password" autoFocus value={t} onChange={(e) => setT(e.target.value)} placeholder="The value of SENTINEL_TOKEN" />
+        <div className="token-field">
+          <input id="tok" className="input" type={showToken ? "text" : "password"} autoFocus value={t} onChange={(e) => setT(e.target.value)} placeholder="The value of SENTINEL_TOKEN" autoComplete="off" />
+          <button type="button" className="token-toggle" onClick={() => setShowToken((visible) => !visible)} aria-label={showToken ? "Hide token" : "Show token"} aria-pressed={showToken}>{showToken ? "Hide" : "Show"}</button>
+        </div>
         {err && <div className="banner" role="alert">{err}</div>}
         <button className="btn primary" disabled={!t.trim()}>Sign in</button>
       </form>
