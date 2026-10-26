@@ -1,0 +1,36 @@
+services:
+  sentinel-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aegis-sentinel:latest
+    container_name: sentinel-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - SENTINEL_TOKEN=${SENTINEL_TOKEN:-dev-token}
+      - SENTINEL_ALLOW_SUSPEND=${SENTINEL_ALLOW_SUSPEND:-1}
+      - SENTINEL_ALLOW_AUTO_CONTAIN=${SENTINEL_ALLOW_AUTO_CONTAIN:-0}
+      - SENTINEL_DB=/app/data/sentinel.db
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - sentinel_data:/app/data
+      - sentinel_evidence:/app/sandbox_evidence
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+volumes:
+  sentinel_data:
+    driver: local
+  sentinel_evidence:
+    driver: local

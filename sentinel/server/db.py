@@ -6,7 +6,7 @@ import threading
 from datetime import datetime, timezone
 from typing import Optional
 
-from contracts import FileEvent, Incident
+from contracts import FileEvent, Incident, IncidentStatus
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS events (
@@ -66,6 +66,26 @@ class Store:
                 "SELECT body FROM incidents WHERE id=?", (inc_id,)
             ).fetchone()
         return Incident.model_validate_json(r["body"]) if r else None
+
+    def find_active_incident_by_pid(self, pid: Optional[int]) -> Optional[Incident]:
+        if pid is None:
+            return None
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT body FROM incidents ORDER BY updated DESC LIMIT 50"
+            ).fetchall()
+        for r in rows:
+            inc = Incident.model_validate_json(r["body"])
+            if inc.pid == pid and inc.status in (IncidentStatus.OPEN, IncidentStatus.AWAITING_APPROVAL):
+                return inc
+        return None
+
+    def reset_all(self) -> None:
+        with self._lock:
+            self._db.execute("DELETE FROM events")
+            self._db.execute("DELETE FROM incidents")
+            self._db.execute("DELETE FROM audit")
+            self._db.commit()
 
     def list_incidents(self, limit: int = 100) -> list[Incident]:
         with self._lock:

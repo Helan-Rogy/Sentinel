@@ -2,10 +2,18 @@
 const KEY = "sentinel.token";
 
 export const getToken = () => {
-  try { return sessionStorage.getItem(KEY) || ""; } catch { return ""; }
+  try { return sessionStorage.getItem(KEY) || localStorage.getItem(KEY) || ""; } catch { return ""; }
 };
 export const setToken = (t) => {
-  try { t ? sessionStorage.setItem(KEY, t) : sessionStorage.removeItem(KEY); } catch { /* storage blocked */ }
+  try {
+    if (t) {
+      sessionStorage.setItem(KEY, t);
+      localStorage.setItem(KEY, t);
+    } else {
+      sessionStorage.removeItem(KEY);
+      localStorage.removeItem(KEY);
+    }
+  } catch { /* storage blocked */ }
 };
 
 export class AuthError extends Error {}
@@ -26,6 +34,77 @@ export async function api(path, { method = "GET", body } = {}) {
     throw new Error(msg);
   }
   return res.json();
+}
+
+export async function downloadEvidence(incidentId) {
+  const token = getToken();
+  const res = await fetch(`/api/incidents/${incidentId}/evidence`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to download evidence package");
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `evidence_${incidentId}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function downloadYara(incidentId) {
+  const token = getToken();
+  const res = await fetch(`/api/incidents/${incidentId}/yara`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to download YARA rule");
+  const text = await res.text();
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ransomware_${incidentId}.yar`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function downloadStix(incidentId) {
+  const token = getToken();
+  const res = await fetch(`/api/incidents/${incidentId}/stix`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to download STIX 2.1 bundle");
+  const text = await res.text();
+  const blob = new Blob([text], { type: "application/json" });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `stix_bundle_${incidentId}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function downloadReport(incidentId) {
+  const token = getToken();
+  const res = await fetch(`/api/incidents/${incidentId}/report`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to download executive report");
+  const text = await res.text();
+  const blob = new Blob([text], { type: "text/markdown" });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `sentinel_report_${incidentId}.md`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
 }
 
 export function openSocket(onMessage, onState) {

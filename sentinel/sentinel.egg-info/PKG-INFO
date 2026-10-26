@@ -10,8 +10,6 @@ Requires-Dist: httpx>=0.27
 Requires-Dist: websockets>=12
 Provides-Extra: dev
 Requires-Dist: pytest>=8; extra == "dev"
-Requires-Dist: watchdog>=4; extra == "dev"
-Requires-Dist: psutil>=5.9; extra == "dev"
 Provides-Extra: endpoint
 Requires-Dist: watchdog>=4; extra == "endpoint"
 Requires-Dist: psutil>=5.9; extra == "endpoint"

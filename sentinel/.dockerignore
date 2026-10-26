@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.git/
+.gitignore
+.agents/
+tests/
+scratch/
+scratch_*
+*.db
+*.log
+evaluation_results.json
+dashboard/node_modules/
+dashboard/.git/

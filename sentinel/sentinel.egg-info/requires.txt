@@ -6,8 +6,6 @@ websockets>=12
 
 [dev]
 pytest>=8
-watchdog>=4
-psutil>=5.9
 
 [endpoint]
 watchdog>=4

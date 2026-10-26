@@ -1,0 +1,92 @@
+{
+  "timestamp": 1793040038.098087,
+  "summary": {
+    "total_trials": 6,
+    "detection_rate_pct": 100.0,
+    "false_positive_rate_pct": 0.0,
+    "mean_time_to_alert_s": 0.15,
+    "avg_files_mutated": 2.0,
+    "mean_cpu_pct": 75.2,
+    "mean_ram_mb": 34.1
+  },
+  "trials": [
+    {
+      "trial_id": 1,
+      "workload_type": "ATTACK",
+      "process_name": "ransomware_simulator.exe",
+      "verdict": "DETECTED",
+      "risk_level": "CRITICAL",
+      "risk_score": 0.769,
+      "time_to_alert_s": 0.12,
+      "files_mutated": 2,
+      "peak_cpu_pct": 0.5,
+      "peak_ram_mb": 34.0,
+      "detail": "2 files encrypted; alerted in 0.12s"
+    },
+    {
+      "trial_id": 2,
+      "workload_type": "ATTACK",
+      "process_name": "ransomware_simulator.exe",
+      "verdict": "DETECTED",
+      "risk_level": "CRITICAL",
+      "risk_score": 0.768,
+      "time_to_alert_s": 0.2,
+      "files_mutated": 2,
+      "peak_cpu_pct": 28.5,
+      "peak_ram_mb": 34.2,
+      "detail": "2 files encrypted; alerted in 0.20s"
+    },
+    {
+      "trial_id": 3,
+      "workload_type": "ATTACK",
+      "process_name": "ransomware_simulator.exe",
+      "verdict": "DETECTED",
+      "risk_level": "CRITICAL",
+      "risk_score": 0.769,
+      "time_to_alert_s": 0.14,
+      "files_mutated": 2,
+      "peak_cpu_pct": 262.5,
+      "peak_ram_mb": 33.9,
+      "detail": "2 files encrypted; alerted in 0.14s"
+    },
+    {
+      "trial_id": 4,
+      "workload_type": "BENIGN",
+      "process_name": "zip_backup.exe",
+      "verdict": "PASSED (CLEAN)",
+      "risk_level": "LOW",
+      "risk_score": 0.036,
+      "time_to_alert_s": null,
+      "files_mutated": 0,
+      "peak_cpu_pct": 38.4,
+      "peak_ram_mb": 34.2,
+      "detail": "Allowlist recognized legitimate backup workflow"
+    },
+    {
+      "trial_id": 5,
+      "workload_type": "BENIGN",
+      "process_name": "robocopy.exe",
+      "verdict": "PASSED (CLEAN)",
+      "risk_level": "LOW",
+      "risk_score": 0.039,
+      "time_to_alert_s": null,
+      "files_mutated": 0,
+      "peak_cpu_pct": 92.1,
+      "peak_ram_mb": 34.3,
+      "detail": "Allowlist recognized legitimate backup workflow"
+    },
+    {
+      "trial_id": 6,
+      "workload_type": "BENIGN",
+      "process_name": "zip_backup.exe",
+      "verdict": "PASSED (CLEAN)",
+      "risk_level": "LOW",
+      "risk_score": 0.033,
+      "time_to_alert_s": null,
+      "files_mutated": 0,
+      "peak_cpu_pct": 29.5,
+      "peak_ram_mb": 34.3,
+      "detail": "Allowlist recognized legitimate backup workflow"
+    }
+  ]
+}

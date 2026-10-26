@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from contracts import (
     EntropyResult, FileEvent, FileOp, HoneyHit, RiskAssessment, RiskLevel, Signal,
 )
+from .allowlist import Allowlist
 
 
 @dataclass
@@ -38,8 +39,13 @@ class Window:
     seconds: float = 10.0
 
 
-def evaluate(w: Window, cfg: RuleConfig | None = None) -> RiskAssessment:
+def evaluate(w: Window, cfg: RuleConfig | None = None,
+             process_name: str | None = None,
+             cmdline: str | None = None) -> RiskAssessment:
     cfg = cfg or RuleConfig()
+    allowlist = Allowlist()
+    is_allowed = allowlist.is_allowlisted(process_name, cmdline)
+
     # A file written then renamed is ONE changed file, not two.
     modified = {e.path for e in w.events if e.op == FileOp.MODIFY}
     renamed_src = {e.path for e in w.events if e.op == FileOp.RENAME}
@@ -77,17 +83,64 @@ def evaluate(w: Window, cfg: RuleConfig | None = None) -> RiskAssessment:
         clip(len(ext_changes) / cfg.full_ext_changes) * cfg.w_ext,
         clip(len(honey_paths) / 1.0) * cfg.w_honey,
     ]
-    score = round(clip(sum(contrib)), 3)
-    level = (RiskLevel.CRITICAL if score >= cfg.critical else RiskLevel.HIGH if score >= cfg.high
-             else RiskLevel.MEDIUM if score >= cfg.medium else RiskLevel.LOW)
+    # ML classification & Platt confidence calibration
+    from .classifier import extract_features, get_classifier
+    feat = extract_features(w, cfg.entropy_floor, cfg.entropy_delta)
+    clf = get_classifier()
+    ml_level, p_attack, margin, conf_str, triage_needed = clf.evaluate_risk(feat)
+
+    # Hybrid blend: combines rule heuristic contrib with calibrated ML probability
+    rule_score = round(clip(sum(contrib)), 3)
+    score = max(rule_score, round(clip(0.40 * rule_score + 0.60 * p_attack), 3))
+
+    # Base rule level
+    rule_level = (RiskLevel.CRITICAL if rule_score >= cfg.critical else RiskLevel.HIGH if rule_score >= cfg.high
+                  else RiskLevel.MEDIUM if rule_score >= cfg.medium else RiskLevel.LOW)
+
+    # ML level evaluation
+    if p_attack >= 0.85 and rule_score >= 0.40:
+        ml_level = RiskLevel.CRITICAL
+    elif p_attack >= 0.65 and rule_score >= 0.30:
+        ml_level = RiskLevel.HIGH
+    elif p_attack >= 0.35:
+        ml_level = RiskLevel.MEDIUM
+    else:
+        ml_level = RiskLevel.LOW
+
+    # Take the higher of rule_level and ml_level
+    rank_map = {RiskLevel.LOW: 0, RiskLevel.MEDIUM: 1, RiskLevel.HIGH: 2, RiskLevel.CRITICAL: 3}
+    level = ml_level if rank_map[ml_level] > rank_map[rule_level] else rule_level
+
+    signals.append(
+        Signal(name="ml_classifier_confidence", value=p_attack, weight=1.0, detail=conf_str)
+    )
 
     active = [s.name for s, c in zip(signals, contrib) if c > 0]
-    uncertainty = ["No sandbox report available", "Not checked against an allowlist"]
+    if p_attack >= 0.50:
+        active.append("ml_classifier")
+
+    uncertainty = ["No sandbox report available", f"Confidence: {conf_str}"]
+    if triage_needed:
+        uncertainty.append("Triage required: low/ambiguous ML confidence interval (< 0.70)")
+
+    if process_name:
+        if is_allowed:
+            uncertainty.append(f"Checked against allowlist: '{process_name}' matches legitimate workflow")
+            # Cap at MEDIUM risk so backup/zip tools can never trigger a High alert or suspension
+            if level in (RiskLevel.HIGH, RiskLevel.CRITICAL):
+                level = RiskLevel.MEDIUM
+        else:
+            uncertainty.append(f"Checked against allowlist: '{process_name}' is not allowlisted")
+    else:
+        uncertainty.append("Not checked against allowlist: process not yet attributed")
+
     if honey_paths and len(active) == 1:
         uncertainty.append("Only a honey-file signal; could be a user mistake")
-    summary = (f"{level.value.upper()} ({score:.2f}): " +
+
+    summary_prefix = f"[ALLOWLISTED: {process_name}] " if (is_allowed and process_name) else ""
+    summary = (f"{level.value.upper()} ({score:.2f}): {summary_prefix}" +
                (", ".join(active) if active else "no suspicious signals"))
-    return RiskAssessment(level=level, score=score, method="rules", signals=signals,
+    return RiskAssessment(level=level, score=score, method="hybrid", signals=signals,
                           uncertainty=uncertainty, summary=summary)
 
 

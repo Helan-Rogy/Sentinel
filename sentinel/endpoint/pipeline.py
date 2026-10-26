@@ -67,6 +67,7 @@ class Pipeline:
         self.mod_times: deque[float] = deque(maxlen=20000)
         self.suspicious_times: deque[float] = deque(maxlen=20000)  # encryption-like writes only
         self.active: Optional[Incident] = None
+        self.pid_incidents: dict[int, Incident] = {}
         self.last_hot = 0.0
         self.last_post = 0.0
         self.last_assessment: Optional[RiskAssessment] = None
@@ -170,14 +171,31 @@ class Pipeline:
     def _tick(self) -> None:
         now = time.time()
         self._prune(now)
+
         w = Window(events=[e for _, e in self.events], entropy=[r for _, r in self.ent.values()],
                    honey=[h for _, h in self.hits], seconds=self.window_s)
         a = evaluate(w, self.rules)
         self.last_assessment = a
+
         if RANK[a.level] >= RANK[RiskLevel.HIGH]:
+            # Attribute process to check allowlist before raising alert
+            proc = attribute_process(self.root, self.ignore_pids)
+            proc_name = proc[1] if proc else None
+            if proc_name:
+                a = evaluate(w, self.rules, process_name=proc_name)
+                self.last_assessment = a
+
+            # If allowlisted, risk was downgraded to MEDIUM
+            if RANK[a.level] < RANK[RiskLevel.HIGH]:
+                return
+
             self.last_hot = now
+            # De-duplication: reuse active incident for this PID if available
+            if proc and proc[0] in self.pid_incidents:
+                self.active = self.pid_incidents[proc[0]]
+
             if self.active is None:
-                self._open(a, w)
+                self._open(a, w, proc)
             elif now - self.last_post >= 2.0:
                 self._refresh(a, w)
         elif self.active is not None and now - self.last_hot > self.quiet_s:
@@ -192,20 +210,29 @@ class Pipeline:
         ranked = sorted(w.entropy, key=lambda r: (r.delta or 0, r.shannon), reverse=True)
         inc.entropy = ranked[:10]
 
-    def _open(self, a: RiskAssessment, w: Window) -> None:
-        proc = attribute_process(self.root, self.ignore_pids)
+    def _open(self, a: RiskAssessment, w: Window, proc: Optional[tuple[int, str]] = None) -> None:
+        if proc is None:
+            proc = attribute_process(self.root, self.ignore_pids)
         steps = [
             AgentStep(kind="observe", text=a.summary),
             AgentStep(kind="tool_call", text="attribute_process", data={"root": self.root}),
             AgentStep(kind="tool_result",
                       text=f"{proc[1]} (pid {proc[0]})" if proc else "no process could be attributed"),
         ]
-        if proc:
+        triage_needed = any("Triage required" in u for u in a.uncertainty)
+        if proc and not triage_needed:
             action = ProposedAction(kind=ActionKind.SUSPEND_PROCESS, pid=proc[0], target=proc[1],
                                     rationale=a.summary, requires_approval=True)
             steps.append(AgentStep(kind="decision",
                                    text=f"Propose suspending {proc[1]}; human approval required"))
             status = IncidentStatus.AWAITING_APPROVAL
+        elif proc and triage_needed:
+            action = ProposedAction(kind=ActionKind.ALERT, pid=proc[0], target=proc[1],
+                                    rationale="Model confidence below threshold (<0.70); SOC triage required",
+                                    requires_approval=True, status=ActionStatus.PROPOSED)
+            steps.append(AgentStep(kind="decision",
+                                   text=f"Confidence margin ambiguous; routing {proc[1]} to human triage before suspension"))
+            status = IncidentStatus.OPEN
         else:
             action = ProposedAction(kind=ActionKind.ALERT, rationale="Process unknown; alert only",
                                     requires_approval=False, status=ActionStatus.EXECUTED)
@@ -216,6 +243,16 @@ class Pipeline:
                        status=status, process_name=proc[1] if proc else None,
                        pid=proc[0] if proc else None, steps=steps, actions=[action])
         self._evidence(inc, a, w)
+
+        # Local LLM / Expert Agent synthesis
+        try:
+            from agents.llm_agent import synthesize_incident
+            synthesize_incident(inc, proc)
+        except Exception as e:
+            print(f"[pipeline] llm synthesis warning: {e}", flush=True)
+
+        if proc:
+            self.pid_incidents[proc[0]] = inc
         self.active, self.last_post = inc, time.time()
         self.sink.incident(inc)
 

@@ -94,10 +94,17 @@ class SandboxReport(BaseModel):
     ts: datetime = Field(default_factory=now)
     backend: str = "stub"
     completed: bool = True
+    vm_name: str = "Kali Linux"
+    vm_state: str = "reverted_to_clean"
+    duration_seconds: float = 60.0
     files_touched: int = 0
     files_encrypted_like: int = 0
     extensions_changed: list[str] = Field(default_factory=list)
+    network_connections: list[dict[str, Any]] = Field(default_factory=list)
+    dropped_files: list[str] = Field(default_factory=list)
     yara_matches: list[str] = Field(default_factory=list)
+    pcap_path: Optional[str] = None
+    evidence_zip_path: Optional[str] = None
     notes: str = ""
 
 

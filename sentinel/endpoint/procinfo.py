@@ -15,30 +15,61 @@ PROTECTED = {
 }
 
 
-def touches_root(proc: psutil.Process, root: str) -> bool:
-    root_n = os.path.normcase(os.path.abspath(root))
+def _clean(p: str) -> str:
+    return os.path.normpath(os.path.abspath(p)).replace("/", "\\").lower() if p else ""
+
+
+def touches_root(proc: psutil.Process, root: str, cmd: Optional[str] = None) -> bool:
+    root_clean = _clean(root)
+    root_base = os.path.basename(root).lower()
     try:
-        cmd = os.path.normcase(" ".join(proc.cmdline()))
-        if root_n in cmd:
+        if cmd is None:
+            cmd = " ".join(proc.cmdline())
+        cmd_clean = cmd.replace("/", "\\").lower()
+        if root_clean in cmd_clean or (root_base and root_base in cmd_clean):
             return True
-        return any(os.path.normcase(f.path).startswith(root_n) for f in proc.open_files())
+        try:
+            cwd_clean = _clean(proc.cwd())
+            if cwd_clean and (cwd_clean.startswith(root_clean) or root_clean.startswith(cwd_clean)):
+                return True
+        except (psutil.Error, OSError):
+            pass
+        return False
     except (psutil.Error, OSError):
         return False
 
 
 def attribute_process(root: str, exclude: tuple[int, ...] = ()) -> Optional[tuple[int, str]]:
     skip = set(exclude) | {os.getpid()}
-    best: Optional[psutil.Process] = None
-    for p in psutil.process_iter(["pid", "name"]):
-        if p.info["pid"] in skip or (p.info["name"] or "").lower() in PROTECTED:
-            continue
-        if touches_root(p, root):
-            try:
-                if best is None or p.create_time() > best.create_time():
-                    best = p
-            except psutil.Error:
+    best: Optional[tuple[int, str, float]] = None
+    root_clean = _clean(root)
+    root_base = os.path.basename(root).lower()
+
+    # Fast batch query using process_iter
+    for p in psutil.process_iter(["pid", "name", "cmdline", "create_time"]):
+        try:
+            pid = p.info["pid"]
+            name = (p.info["name"] or "").lower()
+            if pid in skip or name in PROTECTED:
                 continue
-    return (best.pid, best.name()) if best else None
+            cmd = " ".join(p.info["cmdline"] or [])
+            cmd_clean = cmd.replace("/", "\\").lower()
+            matched = (root_clean in cmd_clean) or (root_base and root_base in cmd_clean)
+            if not matched:
+                try:
+                    cwd_clean = _clean(p.cwd())
+                    if cwd_clean and (cwd_clean.startswith(root_clean) or root_clean.startswith(cwd_clean)):
+                        matched = True
+                except (psutil.Error, OSError):
+                    pass
+            if matched:
+                ctime = p.info.get("create_time") or 0.0
+                if best is None or ctime > best[2]:
+                    best = (pid, p.info["name"] or name, ctime)
+        except (psutil.Error, OSError):
+            continue
+
+    return (best[0], best[1]) if best else None
 
 
 def validate_suspend(pid: int, expected_name: str, root: str, allowed: bool) -> tuple[bool, str]:
