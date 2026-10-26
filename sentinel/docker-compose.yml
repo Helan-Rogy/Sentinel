@@ -18,7 +18,7 @@ services:
       - sentinel_data:/app/data
       - sentinel_evidence:/app/sandbox_evidence
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
       interval: 15s
       timeout: 5s
       retries: 3

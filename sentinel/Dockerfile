@@ -8,8 +8,8 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /build
 
-COPY dashboard/package.json dashboard/package-lock.json ./
-RUN npm ci --prefer-offline --no-audit
+COPY dashboard/package*.json ./
+RUN npm ci --prefer-offline --no-audit || npm install
 
 COPY dashboard/ ./
 RUN npm run build
@@ -24,15 +24,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     SENTINEL_DB=/app/data/sentinel.db \
     PORT=8000
 
-# Install runtime system packages (curl for healthcheck)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
-# Install Python dependencies
+# Install Python dependencies directly from PyPI (pre-built wheels)
 COPY pyproject.toml .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
@@ -63,7 +57,8 @@ RUN mkdir -p /app/data /app/sandbox_evidence
 
 EXPOSE 8000
 
+# Native Python healthcheck probe (zero external package dependencies)
 HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')" || exit 1
 
 CMD ["python", "-m", "uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8000"]
