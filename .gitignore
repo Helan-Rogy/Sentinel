@@ -1,0 +1,37 @@
+# Environments & Virtualenv
+.venv/
+env/
+venv/
+ENV/
+
+# Python cache & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node & Frontend
+node_modules/
+dashboard/node_modules/
+sentinel/dashboard/node_modules/
+.npm
+.vite/
+*.log
+
+# Scratch and test data
+scratch/
+scratch_*
+*.db
+sentinel.db
+data/
+*.zip
+*.pcap
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
