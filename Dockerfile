@@ -8,9 +8,12 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /build
 
 COPY sentinel/dashboard/package*.json ./
-RUN npm ci --prefer-offline --no-audit || npm install
+RUN npm install
 
-COPY sentinel/dashboard/ ./
+COPY sentinel/dashboard/index.html ./index.html
+COPY sentinel/dashboard/vite.config.js ./vite.config.js
+COPY sentinel/dashboard/src/ ./src/
+
 RUN npm run build
 
 # --- Stage 2: Production Python Backend & Unified HUD ---

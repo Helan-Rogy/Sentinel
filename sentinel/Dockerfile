@@ -9,9 +9,12 @@ FROM node:20-alpine AS frontend-builder
 WORKDIR /build
 
 COPY dashboard/package*.json ./
-RUN npm ci --prefer-offline --no-audit || npm install
+RUN npm install
 
-COPY dashboard/ ./
+COPY dashboard/index.html ./index.html
+COPY dashboard/vite.config.js ./vite.config.js
+COPY dashboard/src/ ./src/
+
 RUN npm run build
 
 # --- Stage 2: Production Python Backend & Unified HUD ---
