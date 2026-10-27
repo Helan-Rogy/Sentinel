@@ -99,6 +99,7 @@ function Console({ onLogout }) {
   const [view, setView] = useState(() => location.hash.slice(1) || "overview");
   const [selected, setSelected] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     location.hash = view;
@@ -107,6 +108,7 @@ function Console({ onLogout }) {
   const openIncident = useCallback((id) => {
     setSelected(id);
     setView("incidents");
+    setMobileOpen(false);
   }, []);
 
   const pending = pendingActions(s.incidents).length;
@@ -142,8 +144,11 @@ function Console({ onLogout }) {
 
   return (
     <div className="app">
+      {/* Mobile Backdrop */}
+      {mobileOpen && <div className="mobile-backdrop" onClick={() => setMobileOpen(false)} />}
+
       {/* Left Sidebar - Pitch Black Tactical HUD */}
-      <aside className="rail" aria-label="Main Navigation">
+      <aside className={`rail ${mobileOpen ? "mobile-open" : ""}`} aria-label="Main Navigation">
         {/* Brand Header */}
         <div className="brand-section">
           <div className="brand-header">
@@ -182,7 +187,10 @@ function Console({ onLogout }) {
                 key={id}
                 className="navbtn"
                 aria-current={isActive ? "page" : undefined}
-                onClick={() => setView(id)}
+                onClick={() => {
+                  setView(id);
+                  setMobileOpen(false);
+                }}
               >
                 <div className="navbtn-label">
                   <span className={`material-symbols-outlined ${isActive ? "fill" : ""}`}>
@@ -241,11 +249,23 @@ function Console({ onLogout }) {
       <div className="main-wrapper">
         {/* Top Header Bar */}
         <header className="top-bar">
-          <div className="status-indicator-tag">
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--primary-container)" }} />
-            <span>// SYSTEM STATUS: OPERATIONAL</span>
-            <span style={{ color: "#333333" }}>|</span>
-            <span style={{ color: "var(--text-muted)" }}>KILL-CHAIN MONITOR ACTIVE</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Toggle navigation"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+                {mobileOpen ? "close" : "menu"}
+              </span>
+            </button>
+
+            <div className="status-indicator-tag">
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--primary-container)" }} />
+              <span>// SYSTEM STATUS: OPERATIONAL</span>
+              <span style={{ color: "#333333" }}>|</span>
+              <span style={{ color: "var(--text-muted)" }}>KILL-CHAIN MONITOR ACTIVE</span>
+            </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>

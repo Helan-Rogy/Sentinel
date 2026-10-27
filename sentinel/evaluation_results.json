@@ -1,13 +1,13 @@
 {
-  "timestamp": 1793040038.098087,
+  "timestamp": 1793045586.2710361,
   "summary": {
     "total_trials": 6,
     "detection_rate_pct": 100.0,
     "false_positive_rate_pct": 0.0,
-    "mean_time_to_alert_s": 0.15,
+    "mean_time_to_alert_s": 0.17,
     "avg_files_mutated": 2.0,
-    "mean_cpu_pct": 75.2,
-    "mean_ram_mb": 34.1
+    "mean_cpu_pct": 32.7,
+    "mean_ram_mb": 34.4
   },
   "trials": [
     {
@@ -16,12 +16,12 @@
       "process_name": "ransomware_simulator.exe",
       "verdict": "DETECTED",
       "risk_level": "CRITICAL",
-      "risk_score": 0.769,
-      "time_to_alert_s": 0.12,
+      "risk_score": 0.767,
+      "time_to_alert_s": 0.15,
       "files_mutated": 2,
       "peak_cpu_pct": 0.5,
-      "peak_ram_mb": 34.0,
-      "detail": "2 files encrypted; alerted in 0.12s"
+      "peak_ram_mb": 34.4,
+      "detail": "2 files encrypted; alerted in 0.15s"
     },
     {
       "trial_id": 2,
@@ -29,12 +29,12 @@
       "process_name": "ransomware_simulator.exe",
       "verdict": "DETECTED",
       "risk_level": "CRITICAL",
-      "risk_score": 0.768,
-      "time_to_alert_s": 0.2,
+      "risk_score": 0.767,
+      "time_to_alert_s": 0.18,
       "files_mutated": 2,
-      "peak_cpu_pct": 28.5,
-      "peak_ram_mb": 34.2,
-      "detail": "2 files encrypted; alerted in 0.20s"
+      "peak_cpu_pct": 22.1,
+      "peak_ram_mb": 34.4,
+      "detail": "2 files encrypted; alerted in 0.18s"
     },
     {
       "trial_id": 3,
@@ -42,12 +42,12 @@
       "process_name": "ransomware_simulator.exe",
       "verdict": "DETECTED",
       "risk_level": "CRITICAL",
-      "risk_score": 0.769,
-      "time_to_alert_s": 0.14,
+      "risk_score": 0.767,
+      "time_to_alert_s": 0.18,
       "files_mutated": 2,
-      "peak_cpu_pct": 262.5,
-      "peak_ram_mb": 33.9,
-      "detail": "2 files encrypted; alerted in 0.14s"
+      "peak_cpu_pct": 35.0,
+      "peak_ram_mb": 34.4,
+      "detail": "2 files encrypted; alerted in 0.18s"
     },
     {
       "trial_id": 4,
@@ -58,8 +58,8 @@
       "risk_score": 0.036,
       "time_to_alert_s": null,
       "files_mutated": 0,
-      "peak_cpu_pct": 38.4,
-      "peak_ram_mb": 34.2,
+      "peak_cpu_pct": 57.7,
+      "peak_ram_mb": 34.4,
       "detail": "Allowlist recognized legitimate backup workflow"
     },
     {
@@ -71,8 +71,8 @@
       "risk_score": 0.039,
       "time_to_alert_s": null,
       "files_mutated": 0,
-      "peak_cpu_pct": 92.1,
-      "peak_ram_mb": 34.3,
+      "peak_cpu_pct": 46.7,
+      "peak_ram_mb": 34.5,
       "detail": "Allowlist recognized legitimate backup workflow"
     },
     {
@@ -84,8 +84,8 @@
       "risk_score": 0.033,
       "time_to_alert_s": null,
       "files_mutated": 0,
-      "peak_cpu_pct": 29.5,
-      "peak_ram_mb": 34.3,
+      "peak_cpu_pct": 34.2,
+      "peak_ram_mb": 34.5,
       "detail": "Allowlist recognized legitimate backup workflow"
     }
   ]

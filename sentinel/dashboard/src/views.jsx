@@ -822,7 +822,7 @@ export function Incidents({ s, selected, select }) {
           Zero threat incidents logged. Protected boundary is operating nominally.
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "340px minmax(0, 1fr)", gap: 16, alignItems: "start" }}>
+        <div className="incidents-split-layout">
           <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: "calc(100vh - 180px)", overflowY: "auto" }}>
             {list.map((i) => {
               const isActive = cur?.id === i.id;
