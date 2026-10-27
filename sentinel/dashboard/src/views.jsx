@@ -1129,10 +1129,24 @@ export function Reports({ s }) {
           </h1>
         </div>
 
-        <button className="btn primary" onClick={exportForensicJson}>
-          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>download</span>
-          EXPORT FORENSICS JSON REPORT
-        </button>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            className="btn"
+            style={{ borderColor: "#441a1a", color: "var(--error)", background: "#110606" }}
+            onClick={async () => {
+              if (window.confirm("CRITICAL ACTION: Purge all dashboard telemetry, incidents, and audit logs from the database?\n\nThis will reset the system back to a clean baseline.")) {
+                await s.resetAll();
+              }
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete_forever</span>
+            PURGE / RESET ALL DATA
+          </button>
+          <button className="btn primary" onClick={exportForensicJson}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>download</span>
+            EXPORT FORENSICS JSON REPORT
+          </button>
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 20 }}>

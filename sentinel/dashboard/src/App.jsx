@@ -276,6 +276,21 @@ function Console({ onLogout }) {
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
             />
+            <button
+              className="btn quiet"
+              style={{ padding: "4px 8px", fontSize: 10, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4 }}
+              onClick={async () => {
+                if (window.confirm("CRITICAL: Purge all telemetry, incidents, and audit logs from database?\n\nThis will reset the Sentinel dashboard to a clean zero-threat state.")) {
+                  await s.resetAll();
+                }
+              }}
+              title="Purge / Reset All Dashboard Data"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 16, color: "var(--error)" }}>
+                delete_sweep
+              </span>
+              <span style={{ fontSize: 10, fontWeight: 700 }}>WIPE DATA</span>
+            </button>
             <div
               style={{ position: "relative", cursor: "pointer", display: "flex", alignItems: "center" }}
               onClick={() => setView(pending > 0 ? "response" : "incidents")}

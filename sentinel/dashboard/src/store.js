@@ -49,10 +49,24 @@ export function useSentinel(onAuthLost) {
         setIncidents((prev) => ({ ...prev, [m.data.id]: m.data }));
         refreshMeta();
       }
+      if (m.topic === "reset") {
+        setEvents([]);
+        setIncidents({});
+        refreshMeta();
+      }
     }, setLive);
     const t = setInterval(refreshMeta, 6000);
     return () => { stop(); clearInterval(t); };
   }, [guard, refreshIncidents, refreshMeta]);
+
+  const resetAll = useCallback(async () => {
+    try {
+      await api("/api/reset", { method: "POST" });
+      setEvents([]);
+      setIncidents({});
+      await refreshMeta();
+    } catch (e) { guard(e); }
+  }, [guard, refreshMeta]);
 
   const decide = useCallback(async (incId, actId, approve) => {
     try {
@@ -70,5 +84,5 @@ export function useSentinel(onAuthLost) {
     } catch (e) { guard(e); }
   }, [guard, refreshMeta]);
 
-  return { events, incidents, stats, audit, health, live, error, decide, setStatus };
+  return { events, incidents, stats, audit, health, live, error, decide, setStatus, resetAll };
 }
