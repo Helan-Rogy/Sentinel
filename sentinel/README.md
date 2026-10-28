@@ -1,71 +1,153 @@
 # Sentinel
 
-AI-powered ransomware detection and response agent (project build).
-Status: **Day 1** — contracts, API, live stream, mock generator.
+Sentinel is an AI-assisted ransomware detection and response project built around a live monitoring pipeline, decision engine, and response workflow. The system is designed to watch a directory or endpoint for suspicious file activity, classify whether a process is acting like ransomware, and trigger containment or investigation actions under operator approval.
 
-## Lab setup (Windows host + Kali VM)
+## What this project does
 
-- **Windows host** runs the server, dashboard, endpoint monitor, and the simulator against a
-  throwaway folder such as `C:\SentinelLab\watched`.
-- **Kali VM** is the isolated analysis sandbox (Day 5). Use a host-only network, take a snapshot
-  before every run, and never copy real ransomware anywhere. Only the project simulator is used.
+- Watches directories and endpoint activity for abnormal behavior
+- Collects process and file evidence from monitored endpoints
+- Classifies suspicious activity using heuristic rules and model-based detection
+- Exposes a FastAPI backend for incidents, actions, and event streaming
+- Provides a React dashboard for monitoring and operator decisions
+- Supports simulated lab and evaluation workflows for testing detection logic
 
-## Run (Windows PowerShell)
+## Project status
+
+This repository is a research and prototype project. It includes:
+
+- Contracts and shared schemas
+- FastAPI server and API layer
+- Lab simulation and mock generation tools
+- Endpoint monitoring components
+- Detection and analysis modules
+- Dashboard frontend
+- Evaluation and test harnesses
+
+## Repository layout
+
+- `contracts/` — shared Pydantic models used across the application
+- `server/` — FastAPI API, auth, storage, audit log, and event bus
+- `endpoint/` — watchers, process inspection, and response logic
+- `detection/` — rule-based detection, classification, and model support
+- `analyzers/` — entropy and file-analysis helpers
+- `lab/` — simulator, demo scripts, mock generation, and evaluation tools
+- `dashboard/` — React + Vite web interface
+- `tests/` — automated pytest suite
+- `data/` — evidence and artifact storage
+
+## Quick start
+
+### 1. Create a virtual environment
 
 ```powershell
+cd Sentinel\sentinel
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
-pytest
+```
 
+### 2. Install dependencies
+
+```powershell
+pip install -e ".[dev]"
+```
+
+### 3. Run tests
+
+```powershell
+pytest
+```
+
+### 4. Start the backend
+
+```powershell
 $env:SENTINEL_TOKEN = "dev-token"
 uvicorn server.main:app --port 8000
-# second terminal
+```
+
+Then open the API docs at:
+
+- http://127.0.0.1:8000/docs
+- WebSocket: `ws://127.0.0.1:8000/ws?token=dev-token`
+
+### 5. Generate mock activity
+
+In a second terminal:
+
+```powershell
 python -m lab.mock_generator --url http://127.0.0.1:8000 --token dev-token
 ```
 
-Open http://127.0.0.1:8000/docs for the API. WebSocket: `ws://127.0.0.1:8000/ws?token=dev-token`.
+## End-to-end demo
 
-## Backend demo (Windows, three PowerShell windows, venv active in each)
+This project includes a simulated ransomware lab flow suitable for Windows host + isolated Kali VM testing.
 
 ```powershell
 pip install -e ".[dev,endpoint]"
-python -m lab.e2e_demo                      # one-shot automated check, prints PASS/FAIL
-
-# Manual version
-# 1) server
-$env:SENTINEL_TOKEN="dev-token"; uvicorn server.main:app --port 8000
-# 2) agent (run as Administrator to allow suspend)
-$env:SENTINEL_ALLOW_SUSPEND="1"
-python -m endpoint.agent --watch C:\SentinelLab\watched --url http://127.0.0.1:8000 --token dev-token
-# 3) lab: create dummy files, then attack
-python -m lab.simulator seed   --dir C:\SentinelLab\watched --count 80
-python -m lab.simulator attack --dir C:\SentinelLab\watched --rate 6
-python -m lab.simulator benign --dir C:\SentinelLab\watched --seconds 20   # false-positive test
+python -m lab.e2e_demo
 ```
 
-Then open http://127.0.0.1:8000/docs, authorize with the token, and call
-`POST /api/incidents/{id}/actions/{action_id}/approve`. The agent suspends the process and verifies.
+Manual flow:
 
-## Dashboard (React + Vite)
+```powershell
+# 1) Start the server
+$env:SENTINEL_TOKEN="dev-token"; uvicorn server.main:app --port 8000
+
+# 2) Start the endpoint monitor (run as Administrator where needed)
+$env:SENTINEL_ALLOW_SUSPEND="1"
+python -m endpoint.agent --watch C:\SentinelLab\watched --url http://127.0.0.1:8000 --token dev-token
+
+# 3) Seed files and simulate activity
+python -m lab.simulator seed --dir C:\SentinelLab\watched --count 80
+python -m lab.simulator attack --dir C:\SentinelLab\watched --rate 6
+python -m lab.simulator benign --dir C:\SentinelLab\watched --seconds 20
+```
+
+After the incident is created, you can approve an action from the API docs and trigger a real containment response through the endpoint agent.
+
+## Dashboard
+
+The frontend is a React + Vite app.
 
 ```powershell
 cd dashboard
 npm install
-npm run dev            # http://localhost:5173, proxies /api and /ws to http://127.0.0.1:8000
+npm run dev
 ```
 
-Sign in with the value of `SENTINEL_TOKEN`. To point at another server:
-`$env:VITE_API_TARGET="http://192.168.56.1:8000"; npm run dev`.
-Views: Overview (live trace and approvals), Live, Incidents (evidence), Agent, Response, Reports.
+Open the dashboard at:
 
-## Layout
+- http://localhost:5173
 
-| Path | Purpose |
-|---|---|
-| `contracts/` | Pydantic schemas shared by every domain |
-| `server/` | FastAPI, SQLite storage, auth, audit log, event bus |
-| `lab/` | Mock generator now; simulator and benign workloads later |
-| `tests/` | pytest suite |
+The app proxies API calls and WebSocket traffic to the backend. Sign in using the same token configured for `SENTINEL_TOKEN`.
 
-Dangerous features are off by default: `SENTINEL_ALLOW_SUSPEND=1`, `SENTINEL_ALLOW_AUTO=1`.
+## Safety notes
+
+This project deals with ransomware simulation and endpoint response logic. Use it only in controlled lab environments.
+
+- Use a throwaway directory such as `C:\SentinelLab\watched`
+- Keep analysis workloads isolated in a dedicated VM or sandbox
+- Take a snapshot before running destructive simulation tasks
+- Never run real ransomware samples or sensitive data in this environment
+
+Dangerous features are disabled by default. If you enable response actions, they may suspend or terminate processes depending on your environment.
+
+## Environment variables
+
+- `SENTINEL_TOKEN` — auth token for API and dashboard access
+- `SENTINEL_ALLOW_SUSPEND` — enable process suspension behavior
+- `SENTINEL_ALLOW_AUTO` — enable auto-response logic
+- `VITE_API_TARGET` — optional override for the frontend API target
+
+## License and usage
+
+This project is intended for controlled security research, monitoring, and demonstration use. Review the code and execution environment before running it in any production or sensitive environment.
+
+## Future direction
+
+The project is structured to evolve toward:
+
+- richer behavior-based detection models
+- deeper endpoint telemetry collection
+- human-in-the-loop response approval
+- improved reporting and evidence export
+- sandbox and malware analysis integration
